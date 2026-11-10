@@ -1,6 +1,6 @@
 {
   "name": "@philomelcc/dsh-downloads",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "type": "module",
   "description": "Download manager for the DSH workbench: task queue with progress, pause and resume, and a per-session history.",
   "license": "MIT",
