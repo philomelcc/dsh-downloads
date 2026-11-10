@@ -937,11 +937,18 @@ window.__ModuleLoader__.load({
           }
         };
 
-        // The shell may apply after this module; wait briefly for its service
-        // before falling back to the standalone entry.
-        if (ctx.get("workbench")) { mount(ctx.get("workbench")); return; }
-        ctx.inject(["workbench"], (inner) => mount(inner.workbench));
-        ctx.timeout(() => { if (!mounted) mount(null); }, 1500);
+        // The shell may apply after this module. Poll briefly for its service
+        // before falling back to the standalone entry — plain timers only, so
+        // this works in the client half's reduced context.
+        const startedAt = Date.now();
+        const waitForWorkbench = () => {
+          if (mounted) return;
+          const api = ctx.get("workbench");
+          if (api) { mount(api); return; }
+          if (Date.now() - startedAt > 1500) { mount(null); return; }
+          setTimeout(waitForWorkbench, 100);
+        };
+        waitForWorkbench();
       },
     };
   },
