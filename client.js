@@ -889,47 +889,59 @@ window.__ModuleLoader__.load({
     }
 
     return {
+      // `slots` only: the workbench is optional and resolved at apply time.
       inject: ["slots"],
       apply(ctx) {
-        const api = ctx.get("workbench");
-        const usable = !!(api && api.apiVersion === 1);
-        if (usable) wbRef = api;
-        const tokens = usable ? api.tokens : STANDALONE_TOKENS;
-        // 悬停/按压/切换过渡统一走 CSS，避免每个按钮写一遍内联状态
-        const style = document.createElement("style");
-        style.dataset.plugin = "dsh-download-center";
-        style.textContent = styleText(tokens);
-        document.head.appendChild(style);
-        ctx.effect(() => () => style.remove(), "download-center: styles");
-        ctx.slots.inject("conversation.session.header.actions", () =>
-          ctx.slots.register(
-            { name: "conversation.session.header.actions", id: "download-center-strip", order: 21 },
-            DownloadStrip,
-          ),
-        );
-        if (usable) {
-          ctx.effect(
-            () =>
-              api.registerView({
-                id: "downloads",
-                title: "下载",
-                subtitle: "任务列表、磁力链接与会话下载记录",
-                icon: DownloadIcon,
-                component: DownloadsView,
-                order: 40,
-              }),
-            "download-center: view",
+        let mounted = false;
+
+        const mount = (api) => {
+          if (mounted) return;
+          mounted = true;
+          const usable = !!(api && api.apiVersion === 1);
+          if (usable) wbRef = api;
+          const tokens = usable ? api.tokens : STANDALONE_TOKENS;
+          // 悬停/按压/切换过渡统一走 CSS，避免每个按钮写一遍内联状态
+          const style = document.createElement("style");
+          style.dataset.plugin = "dsh-download-center";
+          style.textContent = styleText(tokens);
+          document.head.appendChild(style);
+          ctx.effect(() => () => style.remove(), "download-center: styles");
+          ctx.slots.inject("conversation.session.header.actions", () =>
+            ctx.slots.register(
+              { name: "conversation.session.header.actions", id: "download-center-strip", order: 21 },
+              DownloadStrip,
+            ),
           );
-        } else {
-          // No workbench: publish the same pair the built-in panels use — a
-          // sidebar entry plus the page it opens.
-          ctx.effect(() => ctx.slots.inject("sidebar.panellist", () => ctx.slots.register({
-            name: "sidebar.panellist", id: "downloads", order: 40, label: "下载",
-          }, DownloadIcon)), "download-center: sidebar entry");
-          ctx.effect(() => ctx.slots.inject("main", () => ctx.slots.register(
-            { name: "main", key: "downloads" }, DownloadsView,
-          )), "download-center: main view");
-        }
+          if (usable) {
+            ctx.effect(
+              () =>
+                api.registerView({
+                  id: "downloads",
+                  title: "下载",
+                  subtitle: "任务列表、磁力链接与会话下载记录",
+                  icon: DownloadIcon,
+                  component: DownloadsView,
+                  order: 40,
+                }),
+              "download-center: view",
+            );
+          } else {
+            // No workbench: publish the same pair the built-in panels use — a
+            // sidebar entry plus the page it opens.
+            ctx.effect(() => ctx.slots.inject("sidebar.panellist", () => ctx.slots.register({
+              name: "sidebar.panellist", id: "downloads", order: 40, label: "下载",
+            }, DownloadIcon)), "download-center: sidebar entry");
+            ctx.effect(() => ctx.slots.inject("main", () => ctx.slots.register(
+              { name: "main", key: "downloads" }, DownloadsView,
+            )), "download-center: main view");
+          }
+        };
+
+        // The shell may apply after this module; wait briefly for its service
+        // before falling back to the standalone entry.
+        if (ctx.get("workbench")) { mount(ctx.get("workbench")); return; }
+        ctx.inject(["workbench"], (inner) => mount(inner.workbench));
+        ctx.timeout(() => { if (!mounted) mount(null); }, 1500);
       },
     };
   },
