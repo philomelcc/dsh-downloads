@@ -7,14 +7,18 @@
   "author": "philomelcc",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/philomelcc/dsh-workbench.git",
-    "directory": "packages/download-center"
+    "url": "git+https://github.com/philomelcc/dsh-downloads.git"
   },
-  "homepage": "https://github.com/philomelcc/dsh-workbench#readme",
+  "homepage": "https://github.com/philomelcc/dsh-downloads#readme",
   "bugs": {
-    "url": "https://github.com/philomelcc/dsh-workbench/issues"
+    "url": "https://github.com/philomelcc/dsh-downloads/issues"
   },
-  "keywords": ["dsh", "deepseek-harness", "workbench", "download-manager"],
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "workbench",
+    "download-manager"
+  ],
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",
